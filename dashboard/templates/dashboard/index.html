@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>European Mapping Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+        }
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 1rem;
+            overflow-y: auto;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+        }
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls h3 {
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .stats {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats h3 {
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        .stat-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .tab:hover {
+            background: #bdc3c7;
+        }
+        .tab.active:hover {
+            background: #2980b9;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .info-text {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ European Urban Mapping System</h1>
+        <div class="nav-menu">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/api/cities/" class="nav-link">API - Cities</a>
+            <a href="/api/regions/" class="nav-link">API - Regions</a>
+            <a href="/admin/" class="nav-link">Admin</a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('filter')">Filter</button>
+                <button class="tab" onclick="switchTab('proximity')">Proximity</button>
+                <button class="tab" onclick="switchTab('regions')">Regions</button>
+                <button class="tab" onclick="switchTab('hotels')">Hotels</button>
+                <button class="tab" onclick="switchTab('stats')">Stats</button>
+            </div>
+
+            <div id="filter-tab" class="tab-content active">
+                <div class="controls">
+                    <h3>Filter Cities</h3>
+                    <div class="form-group">
+                        <label>Min Population:</label>
+                        <input type="number" id="pop-min" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Population:</label>
+                        <input type="number" id="pop-max" value="10000000">
+                    </div>
+                    <div class="form-group">
+                        <label>Country:</label>
+                        <input type="text" id="country" placeholder="e.g., France">
+                    </div>
+                    <div class="form-group">
+                        <label>City Type:</label>
+                        <select id="city-type">
+                            <option value="">All Types</option>
+                            <option value="capital">Capital</option>
+                            <option value="major">Major City</option>
+                            <option value="regional">Regional City</option>
+                            <option value="town">Town</option>
+                        </select>
+                    </div>
+                    <button onclick="loadCities()">Apply Filters</button>
+                    <button onclick="clearMarkers()" class="btn-danger" style="margin-top: 0.5rem;">Clear Map</button>
+                </div>
+            </div>
+
+            <div id="proximity-tab" class="tab-content">
+                <div class="controls">
+                    <h3>Proximity Search</h3>
+                    <p class="info-text">Click on the map to search nearby cities</p>
+                    <div class="form-group">
+                        <label>Search Radius (km):</label>
+                        <input type="number" id="radius" value="200" min="10" max="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Latitude:</label>
+                        <input type="number" id="search-lat" placeholder="Click map" step="0.0001">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude:</label>
+                        <input type="number" id="search-lng" placeholder="Click map" step="0.0001">
+                    </div>
+                    <button onclick="searchNearby()">🔍 Search Nearby Cities</button>
+                    <button id="map-click-btn" onclick="enableMapClick()" class="btn-secondary" style="margin-top: 0.5rem;">📍 Enable Map Click Mode</button>
+                    <p class="info-text" id="click-status" style="display:none; color:#e74c3c; font-weight:bold;">Map click mode ACTIVE - Click anywhere!</p>
+                    
+                    <div id="proximity-results" style="margin-top: 1rem; display: none;">
+                        <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">Cities (<span id="results-count">0</span>)</h4>
+                        <div id="results-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9;">
+                        </div>
+                        
+                        <h4 style="color: #2c3e50; margin-top: 1rem; margin-bottom: 0.5rem;">Hotels (<span id="hotels-count">0</span>)</h4>
+                        <div id="hotels-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="regions-tab" class="tab-content">
+                <div class="controls">
+                    <h3>Regions</h3>
+                    <p class="info-text">Click a region to see cities within it</p>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="show-regions" checked onchange="toggleRegions()">
+                            Show Region Boundaries
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Filter by Country:</label>
+                        <input type="text" id="region-country" placeholder="e.g., France">
+                    </div>
+                    <button onclick="loadRegions()">Load Regions</button>
+                    <button onclick="clearRegions()" class="btn-danger" style="margin-top: 0.5rem;">Clear Regions</button>
+                    <div id="selected-region-info" style="margin-top: 1rem; padding: 0.5rem; background: #ecf0f1; border-radius: 4px; display: none;">
+                        <strong>Selected Region:</strong>
+                        <p id="region-name" style="margin: 0.5rem 0;"></p>
+                        <p id="region-cities" style="margin: 0.5rem 0; color: #3498db;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hotels-tab" class="tab-content">
+                <div class="controls">
+                    <h3>Hotels</h3>
+                    <p class="info-text">Filter and display hotels on the map</p>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="hotels-visible" checked onchange="toggleHotels()">
+                            Show Hotels
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Star Rating:</label>
+                        <select id="hotel-stars" onchange="filterHotels()">
+                            <option value="">All Ratings</option>
+                            <option value="5">5 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="2">2 Stars</option>
+                            <option value="1">1 Star</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Price Range:</label>
+                        <select id="hotel-price" onchange="filterHotels()">
+                            <option value="">All Prices</option>
+                            <option value="luxury">€€€ Luxury</option>
+                            <option value="moderate">€€ Moderate</option>
+                            <option value="budget">€ Budget</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="filterHotels()">🔍 Show Hotels</button>
+                    <button onclick="clearHotels()" class="btn-secondary" style="margin-top: 0.5rem;">Clear Hotels</button>
+                    
+                    <div class="stat-item" style="margin-top: 1rem;">
+                        <strong>Hotels Shown:</strong> <span id="hotel-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats-tab" class="tab-content">
+                <div class="stats">
+                    <h3>Statistics</h3>
+                    <div class="stat-item">
+                        <strong>Total Cities:</strong> <span id="stat-cities">{{ total_cities }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Total Regions:</strong> <span id="stat-regions">{{ total_regions }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Cities on Map:</strong> <span id="stat-visible">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+    <script>
+        let map = L.map('map').setView([51.0, 10.0], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let markers = [];
+        let hotelMarkers = [];
+        let searchMarker = null;
+        let searchCircle = null;
+        let mapClickEnabled = false;
+        let regionLayers = [];
+        let regionsVisible = true;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function clearMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            if (searchMarker) {
+                map.removeLayer(searchMarker);
+                searchMarker = null;
+            }
+            if (searchCircle) {
+                map.removeLayer(searchCircle);
+                searchCircle = null;
+            }
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-visible').textContent = markers.length;
+        }
+
+        function loadCities() {
+            const popMin = document.getElementById('pop-min').value;
+            const popMax = document.getElementById('pop-max').value;
+            const country = document.getElementById('country').value;
+            const cityType = document.getElementById('city-type').value;
+
+            let url = '/api/cities/?';
+            if (popMin) url += `population_min=${popMin}&`;
+            if (popMax) url += `population_max=${popMax}&`;
+            if (country) url += `country=${country}&`;
+            if (cityType) url += `city_type=${cityType}&`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    clearMarkers();
+                    data.features.forEach(feature => {
+                        if (feature.geometry && feature.geometry.coordinates) {
+                            const [lng, lat] = feature.geometry.coordinates;
+                            const props = feature.properties;
+                            const marker = L.marker([lat, lng]).addTo(map);
+                            marker.bindPopup(`
+                                <strong>${props.name}</strong><br>
+                                ${props.country}<br>
+                                Population: ${props.population?.toLocaleString() || 'N/A'}<br>
+                                Type: ${props.city_type || 'N/A'}<br>
+                                GDP per capita: €${props.gdp_per_capita?.toLocaleString() || 'N/A'}
+                            `);
+                            markers.push(marker);
+                        }
+                    });
+                    updateStats();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function enableMapClick() {
+            mapClickEnabled = !mapClickEnabled;
+            const btn = document.getElementById('map-click-btn');
+            const status = document.getElementById('click-status');
+            
+            if (mapClickEnabled) {
+                map.getContainer().style.cursor = 'crosshair';
+                btn.textContent = '❌ Disable Map Click Mode';
+                btn.style.background = '#e74c3c';
+                status.style.display = 'block';
+            } else {
+                map.getContainer().style.cursor = '';
+                btn.textContent = '📍 Enable Map Click Mode';
+                btn.style.background = '#95a5a6';
+                status.style.display = 'none';
+            }
+        }
+
+        function searchNearby() {
+            const lat = document.getElementById('search-lat').value;
+            const lng = document.getElementById('search-lng').value;
+            const radius = document.getElementById('radius').value;
+
+            if (!lat || !lng) {
+                alert('Please set a location (click "Click Map to Set Location" button)');
+                return;
+            }
+
+            const url = `/api/cities/nearby/?lat=${lat}&lng=${lng}&distance=${radius}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    clearMarkers();
+                    
+                    searchMarker = L.marker([lat, lng], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    }).addTo(map);
+                    searchMarker.bindPopup('<strong>Search Location</strong>').openPopup();
+
+                    searchCircle = L.circle([lat, lng], {
+                        radius: radius * 1000,
+                        color: '#3498db',
+                        fillColor: '#3498db',
+                        fillOpacity: 0.1
+                    }).addTo(map);
+
+                    let foundCount = 0;
+                    let resultsList = '';
+                    
+                    data.features.forEach(feature => {
+                        if (feature.geometry && feature.geometry.coordinates) {
+                            const [lng, lat] = feature.geometry.coordinates;
+                            const props = feature.properties;
+                            const marker = L.marker([lat, lng]).addTo(map);
+                            marker.bindPopup(`
+                                <strong>${props.name}</strong><br>
+                                ${props.country}<br>
+                                Population: ${props.population?.toLocaleString() || 'N/A'}
+                            `);
+                            markers.push(marker);
+                            foundCount++;
+                            
+                            // Add to results list
+                            resultsList += `
+                                <div style="padding: 0.5rem; border-bottom: 1px solid #ddd; cursor: pointer;" 
+                                     onclick="map.setView([${lat}, ${lng}], 10); markers[${foundCount-1}].openPopup();">
+                                    <strong>${props.name}</strong>, ${props.country}<br>
+                                    <small style="color: #7f8c8d;">
+                                        Population: ${props.population?.toLocaleString() || 'N/A'}
+                                    </small>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    // Update cities results panel
+                    document.getElementById('results-count').textContent = foundCount;
+                    document.getElementById('results-list').innerHTML = resultsList || '<p style="color: #999;">No cities found</p>';
+                    
+                    // Now fetch nearby hotels
+                    fetch(`/api/hotels/nearby/?lat=${lat}&lng=${lng}&radius=${radius}`)
+                        .then(response => response.json())
+                        .then(hotelData => {
+                            let hotelCount = 0;
+                            let hotelsList = '';
+                            
+                            hotelData.features.forEach(feature => {
+                                if (feature.geometry && feature.geometry.coordinates) {
+                                    const [lng, lat] = feature.geometry.coordinates;
+                                    const props = feature.properties;
+                                    
+                                    // Add hotel marker with gold icon
+                                    const hotelIcon = L.icon({
+                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                        iconSize: [25, 41],
+                                        iconAnchor: [12, 41],
+                                        popupAnchor: [1, -34],
+                                        shadowSize: [41, 41]
+                                    });
+                                    
+                                    const marker = L.marker([lat, lng], {icon: hotelIcon}).addTo(map);
+                                    const stars = '⭐'.repeat(props.star_rating);
+                                    const priceDisplay = props.price_range === 'luxury' ? '€€€' : 
+                                                        props.price_range === 'moderate' ? '€€' : '€';
+                                    
+                                    marker.bindPopup(`
+                                        <strong>🏨 ${props.name}</strong><br>
+                                        ${stars}<br>
+                                        Price: ${priceDisplay}<br>
+                                        City: ${props.city_name}
+                                    `);
+                                    markers.push(marker);
+                                    hotelCount++;
+                                    
+                                    // Add to hotels list
+                                    hotelsList += `
+                                        <div style="padding: 0.5rem; border-bottom: 1px solid #ddd; cursor: pointer;" 
+                                             onclick="markers[${foundCount + hotelCount - 1}].openPopup(); map.setView([${lat}, ${lng}], 12);">
+                                            <strong>🏨 ${props.name}</strong><br>
+                                            <small style="color: #7f8c8d;">
+                                                ${stars} • ${priceDisplay} • ${props.city_name}
+                                            </small>
+                                        </div>
+                                    `;
+                                }
+                            });
+                            
+                            // Update hotels results
+                            document.getElementById('hotels-count').textContent = hotelCount;
+                            document.getElementById('hotels-list').innerHTML = hotelsList || '<p style="color: #999;">No hotels found</p>';
+                            
+                            // Show results panel
+                            if (foundCount > 0 || hotelCount > 0) {
+                                document.getElementById('proximity-results').style.display = 'block';
+                            } else {
+                                document.getElementById('proximity-results').style.display = 'none';
+                                alert(`No cities or hotels found within ${radius}km. Try increasing the radius.`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Hotels error:', error);
+                            document.getElementById('hotels-count').textContent = '0';
+                            document.getElementById('hotels-list').innerHTML = '<p style="color: #e74c3c;">Error loading hotels</p>';
+                        });
+
+                    map.fitBounds(searchCircle.getBounds());
+                    updateStats();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error searching nearby cities. Check console for details.');
+                });
+        }
+
+        function loadRegions() {
+            const country = document.getElementById('region-country').value;
+            let url = '/api/regions/?';
+            if (country) url += `country=${country}&`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    clearRegions();
+                    
+                    data.features.forEach(feature => {
+                        if (feature.geometry && feature.geometry.coordinates) {
+                            const props = feature.properties;
+                            
+                            const polygon = L.geoJSON(feature.geometry, {
+                                style: {
+                                    color: '#3498db',
+                                    weight: 2,
+                                    fillColor: '#3498db',
+                                    fillOpacity: 0.2
+                                }
+                            }).addTo(map);
+                            
+                            polygon.bindPopup(`
+                                <strong>${props.name}</strong><br>
+                                ${props.country}<br>
+                                Population: ${props.total_population?.toLocaleString() || 'N/A'}<br>
+                                Area: ${props.area_km2?.toLocaleString()} km²<br>
+                                <button onclick="showCitiesInRegion('${props.region_code}', '${props.name}')">
+                                    Show Cities in Region
+                                </button>
+                            `);
+                            
+                            polygon.on('click', function() {
+                                showCitiesInRegion(props.region_code, props.name);
+                            });
+                            
+                            regionLayers.push(polygon);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading regions:', error));
+        }
+
+        function clearRegions() {
+            regionLayers.forEach(layer => map.removeLayer(layer));
+            regionLayers = [];
+            document.getElementById('selected-region-info').style.display = 'none';
+        }
+
+        function toggleRegions() {
+            regionsVisible = document.getElementById('show-regions').checked;
+            regionLayers.forEach(layer => {
+                if (regionsVisible) {
+                    map.addLayer(layer);
+                } else {
+                    map.removeLayer(layer);
+                }
+            });
+        }
+
+        function showCitiesInRegion(regionCode, regionName) {
+            fetch(`/api/cities/?region_code=${regionCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    clearMarkers();
+                    
+                    data.features.forEach(feature => {
+                        if (feature.geometry && feature.geometry.coordinates) {
+                            const [lng, lat] = feature.geometry.coordinates;
+                            const props = feature.properties;
+                            const marker = L.marker([lat, lng]).addTo(map);
+                            marker.bindPopup(`
+                                <strong>${props.name}</strong><br>
+                                ${props.country}<br>
+                                Population: ${props.population?.toLocaleString() || 'N/A'}
+                            `);
+                            markers.push(marker);
+                        }
+                    });
+                    
+                    document.getElementById('selected-region-info').style.display = 'block';
+                    document.getElementById('region-name').textContent = regionName;
+                    document.getElementById('region-cities').textContent = 
+                        `${markers.length} cities found in this region`;
+                    
+                    updateStats();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        map.on('click', function(e) {
+            if (mapClickEnabled) {
+                document.getElementById('search-lat').value = e.latlng.lat.toFixed(4);
+                document.getElementById('search-lng').value = e.latlng.lng.toFixed(4);
+                
+                mapClickEnabled = false;
+                map.getContainer().style.cursor = '';
+                document.getElementById('map-click-btn').textContent = '📍 Enable Map Click Mode';
+                document.getElementById('map-click-btn').style.background = '#95a5a6';
+                document.getElementById('click-status').style.display = 'none';
+                
+                if (searchMarker) map.removeLayer(searchMarker);
+                if (searchCircle) map.removeLayer(searchCircle);
+                
+                searchMarker = L.marker(e.latlng, {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+                searchMarker.bindPopup('📍 Search Location<br>Click "Search Nearby Cities"').openPopup();
+            }
+        });
+
+        // Hotel functions
+        function filterHotels() {
+            clearHotels();
+            
+            const stars = document.getElementById('hotel-stars').value;
+            const price = document.getElementById('hotel-price').value;
+            
+            let url = '/api/hotels/?';
+            if (stars) url += `star_rating=${stars}&`;
+            if (price) url += `price_range=${price}&`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let count = 0;
+                    data.features.forEach(feature => {
+                        if (feature.geometry && feature.geometry.coordinates) {
+                            const [lng, lat] = feature.geometry.coordinates;
+                            const props = feature.properties;
+                            
+                            // Hotel icon (different color)
+                            const hotelIcon = L.icon({
+                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41],
+                                popupAnchor: [1, -34],
+                                shadowSize: [41, 41]
+                            });
+                            
+                            const marker = L.marker([lat, lng], {icon: hotelIcon}).addTo(map);
+                            
+                            const stars = '⭐'.repeat(props.star_rating);
+                            const priceDisplay = props.price_range === 'luxury' ? '€€€' : 
+                                                props.price_range === 'moderate' ? '€€' : '€';
+                            
+                            marker.bindPopup(`
+                                <strong>🏨 ${props.name}</strong><br>
+                                ${stars} (${props.star_rating} stars)<br>
+                                Price: ${priceDisplay}<br>
+                                City: ${props.city_name}<br>
+                                <small>${props.amenities}</small>
+                            `);
+                            hotelMarkers.push(marker);
+                            count++;
+                        }
+                    });
+                    
+                    document.getElementById('hotel-count').textContent = count;
+                    
+                    if (count === 0) {
+                        alert('No hotels found with the selected filters.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading hotels. Check console for details.');
+                });
+        }
+        
+        function clearHotels() {
+            hotelMarkers.forEach(marker => map.removeLayer(marker));
+            hotelMarkers = [];
+            document.getElementById('hotel-count').textContent = '0';
+        }
+        
+        function toggleHotels() {
+            const visible = document.getElementById('hotels-visible').checked;
+            if (visible) {
+                filterHotels();
+            } else {
+                clearHotels();
+            }
+        }
+
+        loadCities();
+        loadRegions();
+    </script>
+</body>
+</html>
+

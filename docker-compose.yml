@@ -1,0 +1,89 @@
+version: '3.8'
+
+networks:
+  euro-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+services:
+  postgis:
+    image: postgis/postgis:17-3.5
+    container_name: euro-postgis
+    environment:
+      POSTGRES_DB: european_mapping_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgis-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      euro-network:
+        ipv4_address: 172.25.0.2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  django:
+    build: .
+    container_name: euro-django
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DEBUG=True
+      - DB_NAME=european_mapping_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgis
+      - DB_PORT=5432
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgis:
+        condition: service_healthy
+    networks:
+      euro-network:
+        ipv4_address: 172.25.0.3
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: euro-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: piercemooney7@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: piercemooney
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgis
+    networks:
+      euro-network:
+        ipv4_address: 172.25.0.4
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+  nginx:
+    image: nginx:alpine
+    container_name: euro-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/app/static:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+    networks:
+      euro-network:
+        ipv4_address: 172.25.0.5
+
+volumes:
+  postgis-data:
+  pgadmin-data:
+
