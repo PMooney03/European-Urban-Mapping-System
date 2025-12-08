@@ -24,8 +24,8 @@ RUN mkdir -p /app/staticfiles
 EXPOSE 8000
 
 # Railway sets PORT automatically - use shell form to expand variable
-# Run migrations, seed database (idempotent - only adds missing cities), collectstatic, then start gunicorn
-CMD sh -c "python manage.py migrate --noinput && python manage.py seed_cities && python manage.py collectstatic --noinput && gunicorn european_mapping.wsgi:application --bind 0.0.0.0:\${PORT:-8000} --workers 2"
+# Run migrations, seed database (idempotent - only adds missing cities/regions), collectstatic, then start gunicorn
+CMD sh -c "python manage.py migrate --noinput && python manage.py seed_cities && python manage.py seed_regions && python manage.py collectstatic --noinput && gunicorn european_mapping.wsgi:application --bind 0.0.0.0:\${PORT:-8000} --workers 2"
 
 
 
