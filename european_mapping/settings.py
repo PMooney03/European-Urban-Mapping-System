@@ -140,6 +140,24 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 
+# CSRF settings for Railway HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+# Add Railway domain dynamically
+if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
+    railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{railway_domain}')
+# Also check for any Railway-related environment variables
+railway_url = os.environ.get('RAILWAY_STATIC_URL') or os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if railway_url and 'railway' in railway_url.lower():
+    # Extract domain from URL
+    if railway_url.startswith('https://'):
+        domain = railway_url.replace('https://', '').split('/')[0]
+        if f'https://{domain}' not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(f'https://{domain}')
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
