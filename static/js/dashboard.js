@@ -1171,8 +1171,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     regionsVisible = false;
     
-    // No initial data loading - filters are off by default
-    // Users will select filters and run searches to see data
-    // This improves page load performance and gives users control
+    // Load a small sample of major cities on page load
+    // This gives users something to see immediately
+    fetch('/api/cities/?city_type=capital&population_min=500000')
+        .then(response => {
+            if (!response.ok) {
+                console.error('Failed to fetch cities:', response.status);
+                return { features: [] };
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.features && data.features.length > 0) {
+                // Limit to first 30 cities to not overwhelm
+                const limitedFeatures = data.features.slice(0, 30);
+                limitedFeatures.forEach(feature => {
+                    if (feature.geometry && feature.geometry.coordinates) {
+                        const [lng, lat] = feature.geometry.coordinates;
+                        const props = feature.properties;
+                        const marker = L.marker([lat, lng]).addTo(map);
+                        marker.bindPopup(`
+                            <strong>${props.name}</strong><br>
+                            ${props.country}<br>
+                            Population: ${props.population?.toLocaleString() || 'N/A'}<br>
+                            Type: ${props.city_type || 'N/A'}
+                        `);
+                        markers.push(marker);
+                    }
+                });
+                updateStats();
+                
+                // Fit map to show all markers if we have any
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            } else {
+                console.warn('No cities found in database. Database may need to be seeded.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading initial cities:', error);
+            // Fail silently - user can still use the search
+        });
 });
 
