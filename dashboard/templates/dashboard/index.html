@@ -2,251 +2,228 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>European Mapping Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Location-based services application for exploring cities, regions, and hotels worldwide">
+    <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="World Mapping">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Icons for various devices -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    
+    <title>World Mapping Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-        }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 {
-            margin: 0;
-        }
-        .nav-menu {
-            display: flex;
-            gap: 1rem;
-        }
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .container {
-            display: flex;
-            height: calc(100vh - 80px);
-        }
-        .sidebar {
-            width: 300px;
-            background: white;
-            padding: 1rem;
-            overflow-y: auto;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-        }
-        .map-container {
-            flex: 1;
-            position: relative;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        .controls {
-            background: white;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .controls h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-        }
-        .form-group {
-            margin-bottom: 0.75rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-weight: 500;
-            color: #555;
-        }
-        input, select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        .stats {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .stats h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-        }
-        .stat-item {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #eee;
-        }
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: #ecf0f1;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-        .tab.active {
-            background: #3498db;
-            color: white;
-        }
-        .tab:hover {
-            background: #bdc3c7;
-        }
-        .tab.active:hover {
-            background: #2980b9;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .btn-secondary {
-            background: #95a5a6;
-        }
-        .btn-secondary:hover {
-            background: #7f8c8d;
-        }
-        .btn-danger {
-            background: #e74c3c;
-        }
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-        .info-text {
-            font-size: 0.85rem;
-            color: #7f8c8d;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+    <!-- Style block moved to external CSS file -->
 </head>
 <body>
     <div class="header">
-        <h1>🗺️ European Urban Mapping System</h1>
+        <h1>🗺️ World Urban Mapping System</h1>
         <div class="nav-menu">
             <a href="/" class="nav-link">Dashboard</a>
             <a href="/api/cities/" class="nav-link">API - Cities</a>
             <a href="/api/regions/" class="nav-link">API - Regions</a>
             <a href="/admin/" class="nav-link">Admin</a>
+            <button id="install-btn" class="nav-link" style="display: none; background: transparent; border: 1px solid white; cursor: pointer;">📱 Install App</button>
         </div>
     </div>
     <div class="container">
         <div class="sidebar">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('filter')">Filter</button>
-                <button class="tab" onclick="switchTab('proximity')">Proximity</button>
-                <button class="tab" onclick="switchTab('regions')">Regions</button>
-                <button class="tab" onclick="switchTab('hotels')">Hotels</button>
-                <button class="tab" onclick="switchTab('stats')">Stats</button>
+            <div class="feature-toggles">
+                <button class="toggle-btn active" onclick="toggleFeature('filter')" id="toggle-filter">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">🏙️ Filter Cities</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('proximity')" id="toggle-proximity">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">📍 Proximity</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('regions')" id="toggle-regions">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">🗺️ Regions</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('hotels')" id="toggle-hotels">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">🏨 Hotels</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('landmarks')" id="toggle-landmarks">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">⭐ Landmarks</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('allpois')" id="toggle-allpois">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">🌍 All POIs</span>
+                </button>
+                <button class="toggle-btn" onclick="toggleFeature('stats')" id="toggle-stats">
+                    <span class="toggle-icon">✓</span> 
+                    <span class="toggle-btn-text">📊 Stats</span>
+                </button>
             </div>
 
             <div id="filter-tab" class="tab-content active">
                 <div class="controls">
-                    <h3>Filter Cities</h3>
+                    <h3>🔍 Search & Filter Cities</h3>
+                    <p class="info-text">Find cities by name, country, population, or type</p>
+                    
+                    <!-- Quick Search -->
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>Quick Search:</label>
+                        <input type="text" id="quick-search" placeholder="Search by city or country name..." 
+                               style="padding: 0.875rem; font-size: 1rem;" 
+                               onkeyup="if(event.key === 'Enter') quickSearchCities()">
+                        <button onclick="quickSearchCities()" style="margin-top: 0.5rem; width: 100%;">🔍 Search</button>
+                    </div>
+                    
+                    <div style="border-top: 2px solid #e0e0e0; padding-top: 1rem; margin-top: 1rem;">
+                        <h4 style="color: #2c3e50; font-size: 0.95rem; margin-bottom: 0.75rem; font-weight: 600;">Advanced Filters</h4>
+                        
+                        <div class="form-group">
+                            <label>Country:</label>
+                            <input type="text" id="country" placeholder="e.g., France, Nigeria, United States">
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                     <div class="form-group">
                         <label>Min Population:</label>
-                        <input type="number" id="pop-min" value="0">
+                                <input type="number" id="pop-min" value="0" placeholder="0">
                     </div>
                     <div class="form-group">
                         <label>Max Population:</label>
-                        <input type="number" id="pop-max" value="10000000">
+                                <input type="number" id="pop-max" value="" placeholder="No limit">
                     </div>
-                    <div class="form-group">
-                        <label>Country:</label>
-                        <input type="text" id="country" placeholder="e.g., France">
                     </div>
+                        
                     <div class="form-group">
                         <label>City Type:</label>
                         <select id="city-type">
                             <option value="">All Types</option>
-                            <option value="capital">Capital</option>
-                            <option value="major">Major City</option>
-                            <option value="regional">Regional City</option>
-                            <option value="town">Town</option>
+                                <option value="capital">👑 Capital Cities</option>
+                                <option value="major">🏙️ Major Cities</option>
+                                <option value="regional">🏘️ Regional Cities</option>
+                                <option value="town">🏡 Towns</option>
                         </select>
                     </div>
-                    <button onclick="loadCities()">Apply Filters</button>
-                    <button onclick="clearMarkers()" class="btn-danger" style="margin-top: 0.5rem;">Clear Map</button>
+                    </div>
+                    
+                    <button onclick="loadCities()" style="margin-top: 1rem;">🔍 Apply Filters</button>
+                    <button onclick="clearMarkers()" class="btn-danger" style="margin-top: 0.5rem;">🗑️ Clear Map</button>
                 </div>
             </div>
 
             <div id="proximity-tab" class="tab-content">
                 <div class="controls">
-                    <h3>Proximity Search</h3>
-                    <p class="info-text">Click on the map to search nearby cities</p>
+                    <h3>📍 Proximity Search</h3>
+                    <p class="info-text">Find everything nearby: cities, hotels, shops, restaurants, and more within a radius</p>
+                    
+                    <!-- Location Selection -->
+                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 2px solid #90caf9;">
+                        <h4 style="color: #1565c0; font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 600;">📍 Select Location</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.85rem;">Latitude:</label>
+                                <input type="number" id="search-lat" placeholder="Click map" step="0.0001" style="font-size: 0.9rem;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.85rem;">Longitude:</label>
+                                <input type="number" id="search-lng" placeholder="Click map" step="0.0001" style="font-size: 0.9rem;">
+                            </div>
+                        </div>
+                        <button id="map-click-btn" onclick="enableMapClick()" class="btn-secondary" style="width: 100%; margin-top: 0;">
+                            📍 Click Map to Set Location
+                        </button>
+                        <p class="info-text" id="click-status" style="display:none; color:#e74c3c; font-weight:bold; margin-top: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px;">
+                            ✨ Map click mode ACTIVE - Click anywhere on the map!
+                        </p>
+                    </div>
+                    
+                    <!-- Search Radius -->
                     <div class="form-group">
                         <label>Search Radius (km):</label>
-                        <input type="number" id="radius" value="200" min="10" max="1000">
+                        <input type="range" id="radius-slider" min="0.5" max="50" step="0.5" value="5" 
+                               oninput="document.getElementById('radius').value = this.value; document.getElementById('radius-display').textContent = this.value + ' km'">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">0.5 km</span>
+                            <span id="radius-display" style="font-weight: 600; color: #667eea; font-size: 1rem;">5 km</span>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">50 km</span>
                     </div>
-                    <div class="form-group">
-                        <label>Latitude:</label>
-                        <input type="number" id="search-lat" placeholder="Click map" step="0.0001">
+                        <input type="number" id="radius" value="5" min="0.5" max="50" step="0.5" 
+                               oninput="document.getElementById('radius-slider').value = this.value; document.getElementById('radius-display').textContent = this.value + ' km'"
+                               style="margin-top: 0.5rem;">
                     </div>
-                    <div class="form-group">
-                        <label>Longitude:</label>
-                        <input type="number" id="search-lng" placeholder="Click map" step="0.0001">
-                    </div>
-                    <button onclick="searchNearby()">🔍 Search Nearby Cities</button>
-                    <button id="map-click-btn" onclick="enableMapClick()" class="btn-secondary" style="margin-top: 0.5rem;">📍 Enable Map Click Mode</button>
-                    <p class="info-text" id="click-status" style="display:none; color:#e74c3c; font-weight:bold;">Map click mode ACTIVE - Click anywhere!</p>
                     
-                    <div id="proximity-results" style="margin-top: 1rem; display: none;">
-                        <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">Cities (<span id="results-count">0</span>)</h4>
-                        <div id="results-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9;">
+                    <button onclick="searchNearby()" style="margin-top: 1rem;">🔍 Search Everything Nearby</button>
+                    
+                    <div style="margin-top: 1.25rem; padding: 1.25rem; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                        <h4 style="color: #2c3e50; margin-bottom: 1rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🔍</span> Filter What to Show
+                        </h4>
+                        <div class="filter-group">
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-cities" onchange="applyProximityFilters()">
+                                <label for="filter-cities">🏙️ Cities</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-hotels" onchange="applyProximityFilters()">
+                                <label for="filter-hotels">🏨 Hotels</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-tourism" onchange="applyProximityFilters()">
+                                <label for="filter-tourism">🎯 Tourism & Activities</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-restaurants" onchange="applyProximityFilters()">
+                                <label for="filter-restaurants">🍽️ Restaurants</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-shops" onchange="applyProximityFilters()">
+                                <label for="filter-shops">🛍️ Shops</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-coffee" onchange="applyProximityFilters()">
+                                <label for="filter-coffee">☕ Coffee Shops</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-petrol" onchange="applyProximityFilters()">
+                                <label for="filter-petrol">⛽ Petrol Stations</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="filter-healthcare" onchange="applyProximityFilters()">
+                                <label for="filter-healthcare">🏥 Hospitals & Chemists</label>
+                            </div>
+                    </div>
+                    </div>
+                        
+                    <div id="proximity-results" style="margin-top: 1.5rem; display: none;">
+                        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);">
+                            <h4 style="color: #2c3e50; margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>🏙️</span> Cities <span style="color: #667eea; font-weight: 700;">(<span id="results-count">0</span>)</span>
+                            </h4>
+                            <div id="results-list" style="max-height: 150px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 0.75rem; background: white;">
+                    </div>
+                        
+                            <h4 style="color: #2c3e50; margin-top: 1.25rem; margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>🏨</span> Hotels <span style="color: #667eea; font-weight: 700;">(<span id="hotels-count">0</span>)</span>
+                            </h4>
+                            <div id="hotels-list" style="max-height: 150px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 0.75rem; background: white;">
                         </div>
                         
-                        <h4 style="color: #2c3e50; margin-top: 1rem; margin-bottom: 0.5rem;">Hotels (<span id="hotels-count">0</span>)</h4>
-                        <div id="hotels-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9;">
+                            <h4 style="color: #2c3e50; margin-top: 1.25rem; margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>📍</span> Points of Interest <span style="color: #667eea; font-weight: 700;">(<span id="pois-count">0</span>)</span>
+                            </h4>
+                            <div id="pois-list" style="max-height: 250px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; padding: 0.75rem; background: white;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -258,7 +235,7 @@
                     <p class="info-text">Click a region to see cities within it</p>
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="show-regions" checked onchange="toggleRegions()">
+                            <input type="checkbox" id="show-regions" onchange="toggleRegions()">
                             Show Region Boundaries
                         </label>
                     </div>
@@ -283,7 +260,7 @@
                     
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="hotels-visible" checked onchange="toggleHotels()">
+                                <input type="checkbox" id="hotels-visible" onchange="toggleHotels()">
                             Show Hotels
                         </label>
                     </div>
@@ -319,6 +296,108 @@
                 </div>
             </div>
 
+            <div id="landmarks-tab" class="tab-content">
+                <div class="controls">
+                    <h3>Landmarks & POIs</h3>
+                    <p class="info-text">Discover tourist attractions, historic sites, and points of interest from OpenStreetMap</p>
+                    
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="landmarks-visible" onchange="toggleLandmarks()">
+                                Show Landmarks
+                            </label>
+                        </div>
+                    
+                    <div class="form-group">
+                        <label>Search Radius (km):</label>
+                        <input type="number" id="landmark-radius" value="10" min="1" max="50" step="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Landmark Type:</label>
+                        <select id="landmark-type" onchange="filterLandmarks()">
+                            <option value="">All Types</option>
+                            <option value="tourism">Tourism</option>
+                            <option value="historic">Historic</option>
+                            <option value="amenity">Amenity</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="fetchLandmarks()">🔍 Fetch Landmarks</button>
+                    <button onclick="clearLandmarks()" class="btn-secondary" style="margin-top: 0.5rem;">Clear Landmarks</button>
+                    
+                    <div class="stat-item" style="margin-top: 1rem;">
+                        <strong>Landmarks Shown:</strong> <span id="landmark-count">0</span>
+                    </div>
+                    
+                    <div id="landmark-results" style="margin-top: 1rem; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9; display: none;">
+                        <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">Found Landmarks</h4>
+                        <div id="landmark-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="allpois-tab" class="tab-content">
+                <div class="controls">
+                    <h3>All Points of Interest</h3>
+                    <p class="info-text">Discover everything in an area: shops, restaurants, pubs, hairdressers, landmarks, and more from OpenStreetMap</p>
+                    
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="allpois-visible" onchange="toggleAllPOIs()">
+                                Show All POIs
+                            </label>
+                        </div>
+                    
+                    <div class="form-group">
+                        <label>Search Radius (km):</label>
+                        <input type="number" id="allpois-radius" value="2" min="0.5" max="10" step="0.5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Filter by Type:</label>
+                        <select id="allpois-type" onchange="filterAllPOIs()">
+                            <option value="">All Types</option>
+                            <option value="shop">🛍️ Shops</option>
+                            <option value="amenity">🏢 Amenities</option>
+                            <option value="tourism">🎯 Tourism</option>
+                            <option value="historic">🏛️ Historic</option>
+                            <option value="leisure">🌳 Leisure</option>
+                            <option value="transport">🚉 Transport</option>
+                            <option value="place">🏙️ Places</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Filter by Category:</label>
+                        <select id="allpois-category" onchange="filterAllPOIs()">
+                            <option value="">All Categories</option>
+                            <option value="restaurant">🍽️ Restaurant</option>
+                            <option value="pub">🍺 Pub</option>
+                            <option value="cafe">☕ Cafe</option>
+                            <option value="fast_food">🍔 Fast Food</option>
+                            <option value="hairdresser">✂️ Hairdresser</option>
+                            <option value="pharmacy">💊 Pharmacy</option>
+                            <option value="supermarket">🏪 Supermarket</option>
+                            <option value="museum">🏛️ Museum</option>
+                            <option value="hotel">🏨 Hotel</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="fetchAllPOIs()">🔍 Fetch All POIs</button>
+                    <button onclick="clearAllPOIs()" class="btn-secondary" style="margin-top: 0.5rem;">Clear All POIs</button>
+                    
+                    <div class="stat-item" style="margin-top: 1rem;">
+                        <strong>POIs Shown:</strong> <span id="allpois-count">0</span>
+                    </div>
+                    
+                    <div id="allpois-results" style="margin-top: 1rem; max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: #f9f9f9; display: none;">
+                        <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">Found POIs</h4>
+                        <div id="allpois-list"></div>
+                    </div>
+                </div>
+            </div>
+
             <div id="stats-tab" class="tab-content">
                 <div class="stats">
                     <h3>Statistics</h3>
@@ -331,6 +410,12 @@
                     <div class="stat-item">
                         <strong>Cities on Map:</strong> <span id="stat-visible">0</span>
                     </div>
+                    <div class="stat-item">
+                        <strong>Landmarks on Map:</strong> <span id="stat-landmarks">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>All POIs on Map:</strong> <span id="stat-allpois">0</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -338,442 +423,7 @@
             <div id="map"></div>
         </div>
     </div>
-    <script>
-        let map = L.map('map').setView([51.0, 10.0], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        let markers = [];
-        let hotelMarkers = [];
-        let searchMarker = null;
-        let searchCircle = null;
-        let mapClickEnabled = false;
-        let regionLayers = [];
-        let regionsVisible = true;
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tabName + '-tab').classList.add('active');
-        }
-
-        function clearMarkers() {
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-            if (searchMarker) {
-                map.removeLayer(searchMarker);
-                searchMarker = null;
-            }
-            if (searchCircle) {
-                map.removeLayer(searchCircle);
-                searchCircle = null;
-            }
-            updateStats();
-        }
-
-        function updateStats() {
-            document.getElementById('stat-visible').textContent = markers.length;
-        }
-
-        function loadCities() {
-            const popMin = document.getElementById('pop-min').value;
-            const popMax = document.getElementById('pop-max').value;
-            const country = document.getElementById('country').value;
-            const cityType = document.getElementById('city-type').value;
-
-            let url = '/api/cities/?';
-            if (popMin) url += `population_min=${popMin}&`;
-            if (popMax) url += `population_max=${popMax}&`;
-            if (country) url += `country=${country}&`;
-            if (cityType) url += `city_type=${cityType}&`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    clearMarkers();
-                    data.features.forEach(feature => {
-                        if (feature.geometry && feature.geometry.coordinates) {
-                            const [lng, lat] = feature.geometry.coordinates;
-                            const props = feature.properties;
-                            const marker = L.marker([lat, lng]).addTo(map);
-                            marker.bindPopup(`
-                                <strong>${props.name}</strong><br>
-                                ${props.country}<br>
-                                Population: ${props.population?.toLocaleString() || 'N/A'}<br>
-                                Type: ${props.city_type || 'N/A'}<br>
-                                GDP per capita: €${props.gdp_per_capita?.toLocaleString() || 'N/A'}
-                            `);
-                            markers.push(marker);
-                        }
-                    });
-                    updateStats();
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function enableMapClick() {
-            mapClickEnabled = !mapClickEnabled;
-            const btn = document.getElementById('map-click-btn');
-            const status = document.getElementById('click-status');
-            
-            if (mapClickEnabled) {
-                map.getContainer().style.cursor = 'crosshair';
-                btn.textContent = '❌ Disable Map Click Mode';
-                btn.style.background = '#e74c3c';
-                status.style.display = 'block';
-            } else {
-                map.getContainer().style.cursor = '';
-                btn.textContent = '📍 Enable Map Click Mode';
-                btn.style.background = '#95a5a6';
-                status.style.display = 'none';
-            }
-        }
-
-        function searchNearby() {
-            const lat = document.getElementById('search-lat').value;
-            const lng = document.getElementById('search-lng').value;
-            const radius = document.getElementById('radius').value;
-
-            if (!lat || !lng) {
-                alert('Please set a location (click "Click Map to Set Location" button)');
-                return;
-            }
-
-            const url = `/api/cities/nearby/?lat=${lat}&lng=${lng}&distance=${radius}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    clearMarkers();
-                    
-                    searchMarker = L.marker([lat, lng], {
-                        icon: L.icon({
-                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34],
-                            shadowSize: [41, 41]
-                        })
-                    }).addTo(map);
-                    searchMarker.bindPopup('<strong>Search Location</strong>').openPopup();
-
-                    searchCircle = L.circle([lat, lng], {
-                        radius: radius * 1000,
-                        color: '#3498db',
-                        fillColor: '#3498db',
-                        fillOpacity: 0.1
-                    }).addTo(map);
-
-                    let foundCount = 0;
-                    let resultsList = '';
-                    
-                    data.features.forEach(feature => {
-                        if (feature.geometry && feature.geometry.coordinates) {
-                            const [lng, lat] = feature.geometry.coordinates;
-                            const props = feature.properties;
-                            const marker = L.marker([lat, lng]).addTo(map);
-                            marker.bindPopup(`
-                                <strong>${props.name}</strong><br>
-                                ${props.country}<br>
-                                Population: ${props.population?.toLocaleString() || 'N/A'}
-                            `);
-                            markers.push(marker);
-                            foundCount++;
-                            
-                            // Add to results list
-                            resultsList += `
-                                <div style="padding: 0.5rem; border-bottom: 1px solid #ddd; cursor: pointer;" 
-                                     onclick="map.setView([${lat}, ${lng}], 10); markers[${foundCount-1}].openPopup();">
-                                    <strong>${props.name}</strong>, ${props.country}<br>
-                                    <small style="color: #7f8c8d;">
-                                        Population: ${props.population?.toLocaleString() || 'N/A'}
-                                    </small>
-                                </div>
-                            `;
-                        }
-                    });
-
-                    // Update cities results panel
-                    document.getElementById('results-count').textContent = foundCount;
-                    document.getElementById('results-list').innerHTML = resultsList || '<p style="color: #999;">No cities found</p>';
-                    
-                    // Now fetch nearby hotels
-                    fetch(`/api/hotels/nearby/?lat=${lat}&lng=${lng}&radius=${radius}`)
-                        .then(response => response.json())
-                        .then(hotelData => {
-                            let hotelCount = 0;
-                            let hotelsList = '';
-                            
-                            hotelData.features.forEach(feature => {
-                                if (feature.geometry && feature.geometry.coordinates) {
-                                    const [lng, lat] = feature.geometry.coordinates;
-                                    const props = feature.properties;
-                                    
-                                    // Add hotel marker with gold icon
-                                    const hotelIcon = L.icon({
-                                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-                                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                                        iconSize: [25, 41],
-                                        iconAnchor: [12, 41],
-                                        popupAnchor: [1, -34],
-                                        shadowSize: [41, 41]
-                                    });
-                                    
-                                    const marker = L.marker([lat, lng], {icon: hotelIcon}).addTo(map);
-                                    const stars = '⭐'.repeat(props.star_rating);
-                                    const priceDisplay = props.price_range === 'luxury' ? '€€€' : 
-                                                        props.price_range === 'moderate' ? '€€' : '€';
-                                    
-                                    marker.bindPopup(`
-                                        <strong>🏨 ${props.name}</strong><br>
-                                        ${stars}<br>
-                                        Price: ${priceDisplay}<br>
-                                        City: ${props.city_name}
-                                    `);
-                                    markers.push(marker);
-                                    hotelCount++;
-                                    
-                                    // Add to hotels list
-                                    hotelsList += `
-                                        <div style="padding: 0.5rem; border-bottom: 1px solid #ddd; cursor: pointer;" 
-                                             onclick="markers[${foundCount + hotelCount - 1}].openPopup(); map.setView([${lat}, ${lng}], 12);">
-                                            <strong>🏨 ${props.name}</strong><br>
-                                            <small style="color: #7f8c8d;">
-                                                ${stars} • ${priceDisplay} • ${props.city_name}
-                                            </small>
-                                        </div>
-                                    `;
-                                }
-                            });
-                            
-                            // Update hotels results
-                            document.getElementById('hotels-count').textContent = hotelCount;
-                            document.getElementById('hotels-list').innerHTML = hotelsList || '<p style="color: #999;">No hotels found</p>';
-                            
-                            // Show results panel
-                            if (foundCount > 0 || hotelCount > 0) {
-                                document.getElementById('proximity-results').style.display = 'block';
-                            } else {
-                                document.getElementById('proximity-results').style.display = 'none';
-                                alert(`No cities or hotels found within ${radius}km. Try increasing the radius.`);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Hotels error:', error);
-                            document.getElementById('hotels-count').textContent = '0';
-                            document.getElementById('hotels-list').innerHTML = '<p style="color: #e74c3c;">Error loading hotels</p>';
-                        });
-
-                    map.fitBounds(searchCircle.getBounds());
-                    updateStats();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error searching nearby cities. Check console for details.');
-                });
-        }
-
-        function loadRegions() {
-            const country = document.getElementById('region-country').value;
-            let url = '/api/regions/?';
-            if (country) url += `country=${country}&`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    clearRegions();
-                    
-                    data.features.forEach(feature => {
-                        if (feature.geometry && feature.geometry.coordinates) {
-                            const props = feature.properties;
-                            
-                            const polygon = L.geoJSON(feature.geometry, {
-                                style: {
-                                    color: '#3498db',
-                                    weight: 2,
-                                    fillColor: '#3498db',
-                                    fillOpacity: 0.2
-                                }
-                            }).addTo(map);
-                            
-                            polygon.bindPopup(`
-                                <strong>${props.name}</strong><br>
-                                ${props.country}<br>
-                                Population: ${props.total_population?.toLocaleString() || 'N/A'}<br>
-                                Area: ${props.area_km2?.toLocaleString()} km²<br>
-                                <button onclick="showCitiesInRegion('${props.region_code}', '${props.name}')">
-                                    Show Cities in Region
-                                </button>
-                            `);
-                            
-                            polygon.on('click', function() {
-                                showCitiesInRegion(props.region_code, props.name);
-                            });
-                            
-                            regionLayers.push(polygon);
-                        }
-                    });
-                })
-                .catch(error => console.error('Error loading regions:', error));
-        }
-
-        function clearRegions() {
-            regionLayers.forEach(layer => map.removeLayer(layer));
-            regionLayers = [];
-            document.getElementById('selected-region-info').style.display = 'none';
-        }
-
-        function toggleRegions() {
-            regionsVisible = document.getElementById('show-regions').checked;
-            regionLayers.forEach(layer => {
-                if (regionsVisible) {
-                    map.addLayer(layer);
-                } else {
-                    map.removeLayer(layer);
-                }
-            });
-        }
-
-        function showCitiesInRegion(regionCode, regionName) {
-            fetch(`/api/cities/?region_code=${regionCode}`)
-                .then(response => response.json())
-                .then(data => {
-                    clearMarkers();
-                    
-                    data.features.forEach(feature => {
-                        if (feature.geometry && feature.geometry.coordinates) {
-                            const [lng, lat] = feature.geometry.coordinates;
-                            const props = feature.properties;
-                            const marker = L.marker([lat, lng]).addTo(map);
-                            marker.bindPopup(`
-                                <strong>${props.name}</strong><br>
-                                ${props.country}<br>
-                                Population: ${props.population?.toLocaleString() || 'N/A'}
-                            `);
-                            markers.push(marker);
-                        }
-                    });
-                    
-                    document.getElementById('selected-region-info').style.display = 'block';
-                    document.getElementById('region-name').textContent = regionName;
-                    document.getElementById('region-cities').textContent = 
-                        `${markers.length} cities found in this region`;
-                    
-                    updateStats();
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        map.on('click', function(e) {
-            if (mapClickEnabled) {
-                document.getElementById('search-lat').value = e.latlng.lat.toFixed(4);
-                document.getElementById('search-lng').value = e.latlng.lng.toFixed(4);
-                
-                mapClickEnabled = false;
-                map.getContainer().style.cursor = '';
-                document.getElementById('map-click-btn').textContent = '📍 Enable Map Click Mode';
-                document.getElementById('map-click-btn').style.background = '#95a5a6';
-                document.getElementById('click-status').style.display = 'none';
-                
-                if (searchMarker) map.removeLayer(searchMarker);
-                if (searchCircle) map.removeLayer(searchCircle);
-                
-                searchMarker = L.marker(e.latlng, {
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map);
-                searchMarker.bindPopup('📍 Search Location<br>Click "Search Nearby Cities"').openPopup();
-            }
-        });
-
-        // Hotel functions
-        function filterHotels() {
-            clearHotels();
-            
-            const stars = document.getElementById('hotel-stars').value;
-            const price = document.getElementById('hotel-price').value;
-            
-            let url = '/api/hotels/?';
-            if (stars) url += `star_rating=${stars}&`;
-            if (price) url += `price_range=${price}&`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    let count = 0;
-                    data.features.forEach(feature => {
-                        if (feature.geometry && feature.geometry.coordinates) {
-                            const [lng, lat] = feature.geometry.coordinates;
-                            const props = feature.properties;
-                            
-                            // Hotel icon (different color)
-                            const hotelIcon = L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowSize: [41, 41]
-                            });
-                            
-                            const marker = L.marker([lat, lng], {icon: hotelIcon}).addTo(map);
-                            
-                            const stars = '⭐'.repeat(props.star_rating);
-                            const priceDisplay = props.price_range === 'luxury' ? '€€€' : 
-                                                props.price_range === 'moderate' ? '€€' : '€';
-                            
-                            marker.bindPopup(`
-                                <strong>🏨 ${props.name}</strong><br>
-                                ${stars} (${props.star_rating} stars)<br>
-                                Price: ${priceDisplay}<br>
-                                City: ${props.city_name}<br>
-                                <small>${props.amenities}</small>
-                            `);
-                            hotelMarkers.push(marker);
-                            count++;
-                        }
-                    });
-                    
-                    document.getElementById('hotel-count').textContent = count;
-                    
-                    if (count === 0) {
-                        alert('No hotels found with the selected filters.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error loading hotels. Check console for details.');
-                });
-        }
-        
-        function clearHotels() {
-            hotelMarkers.forEach(marker => map.removeLayer(marker));
-            hotelMarkers = [];
-            document.getElementById('hotel-count').textContent = '0';
-        }
-        
-        function toggleHotels() {
-            const visible = document.getElementById('hotels-visible').checked;
-            if (visible) {
-                filterHotels();
-            } else {
-                clearHotels();
-            }
-        }
-
-        loadCities();
-        loadRegions();
-    </script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
 </body>
 </html>
 

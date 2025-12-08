@@ -28,7 +28,7 @@ wheels/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/static/
+/staticfiles/
 /media/
 
 # Environment variables
@@ -50,4 +50,8 @@ Thumbs.db
 # Project specific
 *.pyc
 migrations/__pycache__/
+
+# Cordova (if folder still exists, don't commit it)
+cordova-app/
+
 

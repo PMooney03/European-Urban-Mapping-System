@@ -44,3 +44,6 @@ class Hotel(models.Model):
             models.Index(fields=['price_range']),
         ]
 
+
+
+

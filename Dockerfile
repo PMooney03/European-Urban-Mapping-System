@@ -18,9 +18,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Create staticfiles directory and collect static files
+RUN mkdir -p /app/staticfiles
 RUN python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD gunicorn european_mapping.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2
+
+
+
 

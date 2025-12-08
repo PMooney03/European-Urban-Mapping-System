@@ -18,9 +18,16 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-5eora@#0!%)l*2ic7ca1g@e42f)ls5&(-+g!e0odm+b+^aw%rn'
-DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5eora@#0!%)l*2ic7ca1g@e42f)ls5&(-+g!e0odm+b+^aw%rn')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+# ALLOWED_HOSTS - Railway provides RAILWAY_PUBLIC_DOMAIN
+allowed_hosts = ['localhost', '127.0.0.1', '0.0.0.0']
+if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
+    allowed_hosts.append(os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
+if os.environ.get('RAILWAY_STATIC_URL'):
+    allowed_hosts.append(os.environ.get('RAILWAY_STATIC_URL').replace('https://', '').split('/')[0])
+ALLOWED_HOSTS = allowed_hosts + ['*']  # Allow all for now
 
 # GDAL Library Path for Windows Conda
 if os.name == 'nt':  # Windows
@@ -45,6 +52,7 @@ INSTALLED_APPS = [
     'api',
     'dashboard',
     'hotels',
+    'landmarks',
 ]
 
 MIDDLEWARE = [
@@ -89,6 +97,14 @@ DATABASES = {
     }
 }
 
+# Parse Railway DATABASE_URL if provided
+if 'DATABASE_URL' in os.environ:
+    import dj_database_url
+    db_from_env = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
+    DATABASES['default'].update(db_from_env)
+    # Ensure PostGIS engine is used
+    DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
@@ -130,8 +146,15 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Static files finders
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

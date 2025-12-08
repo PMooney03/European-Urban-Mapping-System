@@ -10,3 +10,6 @@ class HotelAdmin(gis_admin.GISModelAdmin):
     search_fields = ['name', 'city__name']
     ordering = ['city', 'name']
 
+
+
+
