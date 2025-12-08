@@ -21,6 +21,7 @@ let searchCircle = null;
 let mapClickEnabled = false;
 let regionLayers = [];
 let regionsVisible = false; // Regions hidden by default
+let regionDataMap = {}; // Store region data for quick lookup by region_code
 
 // Clustering
 let cityCluster = null;
@@ -736,18 +737,40 @@ function applyProximityFilters() {
 
 // Regions functions
 function loadRegions() {
-    const country = document.getElementById('region-country').value;
-    let url = '/api/regions/?';
-    if (country) url += `country=${encodeURIComponent(country)}&`;
+    const country = document.getElementById('region-country')?.value || '';
+    let url = '/api/regions/';
+    if (country) {
+        url += `?country=${encodeURIComponent(country)}`;
+    }
 
     fetch(url)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             clearRegions();
+            regionDataMap = {}; // Reset region data map
+            
+            if (!data.features || data.features.length === 0) {
+                console.warn('No regions found');
+                return;
+            }
             
             data.features.forEach(feature => {
                 if (feature.geometry && feature.geometry.coordinates) {
                     const props = feature.properties;
+                    
+                    // Store region data for quick lookup by region_code
+                    if (props.region_code) {
+                        regionDataMap[props.region_code] = {
+                            id: props.id || feature.id,
+                            name: props.name,
+                            region_code: props.region_code
+                        };
+                    }
                     
                     const polygon = L.geoJSON(feature.geometry, {
                         style: {
@@ -766,8 +789,9 @@ function loadRegions() {
                         <strong>${props.name}</strong><br>
                         ${props.country}<br>
                         Population: ${props.total_population?.toLocaleString() || 'N/A'}<br>
-                        Area: ${props.area_km2?.toLocaleString()} km²<br>
-                        <button onclick="showCitiesInRegion('${props.region_code}', '${props.name}')">
+                        Area: ${props.area_km2?.toLocaleString() || 'N/A'} km²<br>
+                        Type: ${props.region_type || 'N/A'}<br>
+                        <button onclick="showCitiesInRegion('${props.region_code}', '${props.name}')" style="margin-top: 5px; padding: 5px 10px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 3px;">
                             Show Cities in Region
                         </button>
                     `);
@@ -779,8 +803,17 @@ function loadRegions() {
                     regionLayers.push(polygon);
                 }
             });
+            
+            // Fit map to show all regions if any were loaded and visible
+            if (regionLayers.length > 0 && regionsVisible) {
+                const group = new L.featureGroup(regionLayers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
         })
-        .catch(error => console.error('Error loading regions:', error));
+        .catch(error => {
+            console.error('Error loading regions:', error);
+            alert(`Error loading regions: ${error.message}`);
+        });
 }
 
 function clearRegions() {
@@ -804,10 +837,60 @@ function toggleRegions() {
 }
 
 function showCitiesInRegion(regionCode, regionName) {
-    fetch(`/api/cities/?region_code=${regionCode}`)
-        .then(response => response.json())
+    // Find region ID from stored data or fetch it
+    let regionId = null;
+    
+    if (regionDataMap[regionCode]) {
+        regionId = regionDataMap[regionCode].id;
+    } else {
+        // If not in cache, fetch regions to find the ID
+        fetch('/api/regions/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch regions');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const region = data.features.find(f => f.properties.region_code === regionCode);
+                if (!region) {
+                    throw new Error(`Region with code ${regionCode} not found`);
+                }
+                regionId = region.properties.id || region.id;
+                fetchCitiesInRegion(regionId, regionName);
+            })
+            .catch(error => {
+                console.error('Error finding region:', error);
+                alert(`Error: ${error.message}`);
+            });
+        return;
+    }
+    
+    fetchCitiesInRegion(regionId, regionName);
+}
+
+function fetchCitiesInRegion(regionId, regionName) {
+    // Use the spatial endpoint for accurate PostGIS ST_Within query
+    fetch(`/api/regions/${regionId}/cities/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             clearMarkers();
+            
+            if (!data.features || data.features.length === 0) {
+                const info = document.getElementById('selected-region-info');
+                const nameEl = document.getElementById('region-name');
+                const citiesEl = document.getElementById('region-cities');
+                if (info) info.style.display = 'block';
+                if (nameEl) nameEl.textContent = regionName;
+                if (citiesEl) citiesEl.textContent = 'No cities found in this region';
+                updateStats();
+                return;
+            }
             
             data.features.forEach(feature => {
                 if (feature.geometry && feature.geometry.coordinates) {
@@ -817,22 +900,32 @@ function showCitiesInRegion(regionCode, regionName) {
                     marker.bindPopup(`
                         <strong>${props.name}</strong><br>
                         ${props.country}<br>
-                        Population: ${props.population?.toLocaleString() || 'N/A'}
+                        Population: ${props.population?.toLocaleString() || 'N/A'}<br>
+                        Type: ${props.city_type || 'N/A'}
                     `);
                     markers.push(marker);
                 }
             });
+            
+            // Fit map to show all cities
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
             
             const info = document.getElementById('selected-region-info');
             const nameEl = document.getElementById('region-name');
             const citiesEl = document.getElementById('region-cities');
             if (info) info.style.display = 'block';
             if (nameEl) nameEl.textContent = regionName;
-            if (citiesEl) citiesEl.textContent = `${markers.length} cities found in this region`;
+            if (citiesEl) citiesEl.textContent = `${markers.length} cities found in ${regionName}`;
             
             updateStats();
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error loading cities in region:', error);
+            alert(`Error loading cities: ${error.message}`);
+        });
 }
 
 // Hotel functions

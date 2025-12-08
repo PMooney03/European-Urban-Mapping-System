@@ -54,4 +54,8 @@ migrations/__pycache__/
 # Cordova (if folder still exists, don't commit it)
 cordova-app/
 
+AssignmentContextSheet.txt
 
+
+extract_files.py
+extract_js.py
