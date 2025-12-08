@@ -18,13 +18,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Create staticfiles directory and collect static files
+# Create staticfiles directory
 RUN mkdir -p /app/staticfiles
-RUN python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
-CMD gunicorn european_mapping.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2
+# Railway sets PORT automatically - use shell form to expand variable
+# Run migrations and collectstatic, then start gunicorn
+CMD sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn european_mapping.wsgi:application --bind 0.0.0.0:\${PORT:-8000} --workers 2"
 
 
 
